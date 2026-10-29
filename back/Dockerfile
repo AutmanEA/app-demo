@@ -12,6 +12,8 @@ RUN npm prune --omit=dev
 
 # --- #
 FROM node:24-alpine
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
 ENV NODE_ENV=production
 WORKDIR /app
 
