@@ -7,7 +7,7 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -103,3 +103,19 @@ jobs:
           labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  deploy:
+    name: Déploiement
+    needs: [images]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: [self-hosted, deploy]
+    environment: production
+
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    steps:
+      - name: Déployer ${{ github.sha }}
+        run: sudo -H -u deploy /opt/app/scripts/deploy.sh "${{ github.sha }}"
