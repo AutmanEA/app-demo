@@ -19,6 +19,7 @@ services:
       retries: 5
 
   back:
+    image: ghcr.io/${GHCR_OWNER:-local}/demo-back:${APP_VERSION:-latest}
     build: ./back
     restart: unless-stopped
     environment:
@@ -42,6 +43,7 @@ services:
       start_period: 10s
 
   front:
+    image: ghcr.io/${GHCR_OWNER:-local}/demo-front:${APP_VERSION:-latest}
     build: ./front
     restart: unless-stopped
     networks:
