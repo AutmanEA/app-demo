@@ -4,6 +4,9 @@ import { Controller, Get } from '@nestjs/common';
 export class AppController {
   @Get('health')
   health() {
-    return { status: 'ok' };
+    return {
+      status: 'ok',
+      version: process.env.APP_VERSION ?? 'dev',
+    };
   }
 }

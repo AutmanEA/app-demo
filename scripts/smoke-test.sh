@@ -3,10 +3,20 @@
 set -euo pipefail
 
 BASE_URL="${1:-http://localhost}"
-echo "Smoke tests sur $BASE_URL"
+EXPECTED_VERSION="${2:-}"
+echo "🔍 Smoke tests sur $BASE_URL"
 
 fail() { echo "failure: $1"; exit 1; }
 success() { echo "success: $1"; }
+
+health=$(curl -fsS --max-time 5 "$BASE_URL/health") || fail "/health ne répond pas"
+if [ -n "$EXPECTED_VERSION" ]; then
+  echo "$health" | grep -q "\"version\":\"$EXPECTED_VERSION\"" \
+    || fail "Version attendue : $EXPECTED_VERSION — reçue : $health"
+  success "Version déployée : ${EXPECTED_VERSION:0:7}"
+else
+  success "/health"
+fi
 
 curl -fsS --max-time 5 "$BASE_URL/" | grep -q '<app-root' || fail "La page d'acceuil ne sert pas l'appli Angular"
 success "Page d'acceuil"

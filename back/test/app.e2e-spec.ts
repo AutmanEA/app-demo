@@ -28,8 +28,10 @@ describe('API GraphQL (intégration)', () => {
     await app.close();
   });
 
-  it('GET /health répond ok', () => {
-    return request(app.getHttpServer()).get('/health').expect(200).expect({ status: 'ok' });
+  it('GET /health répond ok', async () => {
+    const res = await request(app.getHttpServer()).get('/health').expect(200);
+
+    expect(res.body.status).toBe('ok');
   });
 
   it('ajoute puis liste un message', async () => {
