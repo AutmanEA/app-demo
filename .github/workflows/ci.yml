@@ -16,9 +16,6 @@ jobs:
   back:
     name: Back
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: back
 
     services:
       postgres:
@@ -50,17 +47,11 @@ jobs:
           cache: npm
           cache-dependency-path: back/package-lock.json
 
-      - run: npm ci
-      - run: npm run build
-      - run: npm test
-      - run: npm run test:e2e
+      - run: ./scripts/ci-back.sh
 
   front:
     name: Front
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: front
 
     steps:
       - uses: actions/checkout@v5
@@ -70,9 +61,7 @@ jobs:
           cache: npm
           cache-dependency-path: front/package-lock.json
 
-      - run: npm ci
-      - run: npm run build
-      - run: npm test -- --watch=false
+      - run: ./scripts/ci-front.sh
 
   images:
     name: Images Docker
