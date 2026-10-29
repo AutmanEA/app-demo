@@ -16,9 +16,6 @@ jobs:
   back:
     name: Back
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: back
 
     services:
       postgres:
@@ -55,9 +52,6 @@ jobs:
   front:
     name: Front
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: front
 
     steps:
       - uses: actions/checkout@v5
