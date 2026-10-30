@@ -5,9 +5,9 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: /run/secrets/db_admin_password
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_ADMIN_USER:?DB_ADMIN_USER manquant dans .env}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+      POSTGRES_DB: ${DB_NAME:?DB_NAME manquant dans .env}
     secrets:
       - db_admin_password
     volumes:
@@ -21,7 +21,7 @@ services:
       retries: 5
 
   migrate:
-    image: ghcr.io/${GHCR_OWNER:-local}/demo-back:${APP_VERSION:-latest}
+    image: ghcr.io/${GHCR_OWNER:?GHCR_OWNER manquant dans .env}/demo-back:${APP_VERSION:-latest}
     command: ["node", "dist/migrate.js"]
     profiles: ["tools"]
     environment:
@@ -41,7 +41,7 @@ services:
       - backend
 
   back:
-    image: ghcr.io/${GHCR_OWNER:-local}/demo-back:${APP_VERSION:-latest}
+    image: ghcr.io/${GHCR_OWNER:?GHCR_OWNER manquant dans .env}/demo-back:${APP_VERSION:-latest}
     build: ./back
     restart: unless-stopped
     environment:
@@ -67,7 +67,7 @@ services:
       start_period: 10s
 
   front:
-    image: ghcr.io/${GHCR_OWNER:-local}/demo-front:${APP_VERSION:-latest}
+    image: ghcr.io/${GHCR_OWNER:?GHCR_OWNER manquant dans .env}/demo-front:${APP_VERSION:-latest}
     build: ./front
     restart: unless-stopped
     networks:
