@@ -4,3 +4,4 @@ dist
 .angular
 proxy/certs/
 .deploy-history
+secrets/

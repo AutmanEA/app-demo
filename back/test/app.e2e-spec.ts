@@ -21,7 +21,7 @@ describe('API GraphQL (intégration)', () => {
   });
 
   beforeEach(async () => {
-    await app.get(DbService).pool.query('TRUNCATE message RESTART IDENTITY');
+    await app.get(DbService).pool.query('DELETE FROM message');
   });
 
   afterAll(async () => {

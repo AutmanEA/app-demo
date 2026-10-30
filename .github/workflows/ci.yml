@@ -35,9 +35,11 @@ jobs:
     env:
       DB_HOST: localhost
       DB_PORT: 5432
-      DB_USER: app
-      DB_PASSWORD: app
       DB_NAME: app_test
+      DB_ADMIN_USER: app
+      DB_ADMIN_PASSWORD: app
+      DB_USER: app_runtime
+      DB_PASSWORD: app_runtime_ci
 
     steps:
       - uses: actions/checkout@v5

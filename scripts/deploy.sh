@@ -56,28 +56,32 @@ main() {
   log "🚀 Déploiement de ${NEW:0:7} (actuelle : ${OLD:0:7}${OLD:-inconnue})"
 
   # ─────
-  log "1/6 Code et configuration"
+  log "1/7 Code et configuration"
   git fetch --quiet origin
   git reset --quiet --hard "$NEW"
 
-  log "2/6 Téléchargement des images"
+  log "2/7 Téléchargement des images"
   APP_VERSION="$NEW" docker compose pull --quiet back front \
     || { restore_files; die "Images de ${NEW:0:7} introuvables : la CI les a-t-elle publiées ?"; }
 
-  log "3/6 Vérification de la config Nginx"
+  log "3/7 Vérification de la config Nginx"
   docker compose run --rm --no-deps -T proxy nginx -t \
     || { restore_files; die "Config Nginx invalide"; }
 
-  log "4/6 Sauvegarde de la base"
+  log "4/7 Sauvegarde de la base"
   ./scripts/backup.sh || { restore_files; die "Sauvegarde impossible : déploiement annulé"; }
 
+  log "5/7 Migrations de la base"
+  APP_VERSION="$NEW" docker compose run --rm migrate \
+    || { restore_files; die "Migration échouée : la prod tourne toujours sur l'ancienne version"; }
+
   # ─────
-  log "5/6 Démarrage de la nouvelle version"
+  log "6/7 Démarrage de la nouvelle version"
   set_version "$NEW"
   docker compose up -d --no-build --wait --wait-timeout 120 || rollback
   docker compose exec -T proxy nginx -s reload || rollback
 
-  log "6/6 Smoke tests"
+  log "7/7 Smoke tests"
   ./scripts/smoke-test.sh "$SMOKE_URL" "$NEW" || rollback
 
   echo "$(date -Iseconds) OK $NEW" >> "$HISTORY_FILE"

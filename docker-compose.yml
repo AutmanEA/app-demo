@@ -6,8 +6,10 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: /run/secrets/db_admin_password
       POSTGRES_DB: ${DB_NAME}
+    secrets:
+      - db_admin_password
     volumes:
       - db-data:/var/lib/postgresql
     networks:
@@ -18,6 +20,26 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    image: ghcr.io/${GHCH_OWNER:-local}/demo-back:${APP_VERSION:-latest}
+    command: ["node", "dist/migrate.js"]
+    profiles: ["tools"]
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_ADMIN_USER: ${DB_ADMIN_USER}
+      DB_ADMIN_PASSWORD_FILE: /run/secrets/db_admin_password
+      DB_USER: app_runtime
+      DB_PASSWORD_FILE: /run/secrets/db_app_password
+    secrets:
+      - db_admin_password
+      - db_app_password
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+
   back:
     image: ghcr.io/${GHCR_OWNER:-local}/demo-back:${APP_VERSION:-latest}
     build: ./back
@@ -26,9 +48,11 @@ services:
       NODE_ENV: production
       DB_HOST: db
       DB_PORT: 5432
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+      DB_USER: app_runtime
+      DB_PASSWORD_FILE: /run/secrets/db_app_password
+    secrets:
+      - db_app_password
     depends_on:
       db:
         condition: service_healthy
@@ -70,6 +94,12 @@ services:
         condition: service_healthy
     networks:
       - frontend
+
+secrets:
+  db_admin_password:
+    file: ./secrets/db_admin_password
+  db_app_password:
+    file: ./secrets/db_app_password
 
 networks:
   frontend:
