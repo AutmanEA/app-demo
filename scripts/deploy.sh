@@ -17,7 +17,10 @@ set_version() { sed -i "s/^APP_VERSION=.*/APP_VERSION=$1/" .env; }
 
 # Remet le code et la config de l'ancienne version (sans toucher aux conteneurs)
 restore_files() {
-  if [ -n "$OLD" ]; then git reset --quiet --hard "$OLD"; fi
+  if [ -n "$OLD" ]; then
+    git reset --quiet --hard "$OLD";
+    if [ -x scripts/decrypt-secrets.sh ]; then ./scripts/decrypt-secrets.sh; fi
+  fi
 }
 
 # Retour arrière complet : fichiers, version, conteneurs
@@ -59,6 +62,7 @@ main() {
   log "1/7 Code et configuration"
   git fetch --quiet origin
   git reset --quiet --hard "$NEW"
+  ./scripts/decrypt-secrets.sh || { restore_files; die "Déchiffrement des secrets impossible"; }
 
   log "2/7 Téléchargement des images"
   APP_VERSION="$NEW" docker compose pull --quiet back front \
