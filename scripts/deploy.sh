@@ -82,8 +82,19 @@ main() {
   docker compose up -d --no-build --remove-orphans --wait --wait-timeout 120 || rollback
 
   log "7/7 Smoke tests"
-  ./scripts/smoke-test.sh "$SMOKE_URL" "$NEW" || rollback
-
+  # Traefik a besoin de quelques secondes pour découvrir les nouveaux conteneurs :
+  # on réessaie avant de conclure à un échec
+  for attempt in 1 2 3 4 5 6; do
+    if ./scripts/smoke-test.sh "$SMOKE_URL" "$NEW"; then
+      break
+    fi
+    if [ "$attempt" -eq 6 ]; then
+      rollback
+    fi
+    log "Nouvel essai dans 5 s ($attempt/6)…"
+    sleep 5
+  done
+  
   echo "$(date -Iseconds) OK $NEW" >> "$HISTORY_FILE"
   docker image prune -f > /dev/null
   log "✅ ${NEW:0:7} est en production"
