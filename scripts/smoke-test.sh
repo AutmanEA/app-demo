@@ -2,7 +2,7 @@
 # Usage: ./scripts/smoke-test.sh <url>
 set -euo pipefail
 
-BASE_URL="${1:-http://localhost}"
+BASE_URL="${1:-https://localhost}"
 EXPECTED_VERSION="${2:-}"
 echo "🔍 Smoke tests sur $BASE_URL"
 
@@ -34,7 +34,7 @@ success "Introspection désactivée"
 if [[ "$BASE_URL" == https://* ]]; then
   HTTP_URL="${BASE_URL/https:/http:}"
   code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$HTTP_URL/")
-  [ "$code" = "301" ] || fail "HTTP ne redirige pas vers HTTPS (code $code)"
+  [[ "$code" =~ ^30[18]$ ]] || fail "HTTP ne redirige pas vers HTTPS (code $code)"
   success "Redirection HTTP → HTTPS"
 
   headers=$(curl -fsSI --max-time 5 "$BASE_URL/")
