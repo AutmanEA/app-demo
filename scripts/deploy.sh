@@ -64,9 +64,9 @@ main() {
   APP_VERSION="$NEW" docker compose pull --quiet back front \
     || { restore_files; die "Images de ${NEW:0:7} introuvables : la CI les a-t-elle publiées ?"; }
 
-  log "3/7 Vérification de la config Nginx"
-  docker compose run --rm --no-deps -T proxy nginx -t \
-    || { restore_files; die "Config Nginx invalide"; }
+  log "3/7 Vérification du reverse proxy"
+  docker compose -f infra/edge/compose.yml config --quiet \
+    || { restore_files; die "Config de la stack edge invalide"; }
 
   log "4/7 Sauvegarde de la base"
   ./scripts/backup.sh || { restore_files; die "Sauvegarde impossible : déploiement annulé"; }
@@ -78,8 +78,8 @@ main() {
   # ─────
   log "6/7 Démarrage de la nouvelle version"
   set_version "$NEW"
-  docker compose up -d --no-build --wait --wait-timeout 120 || rollback
-  docker compose exec -T proxy nginx -s reload || rollback
+  docker compose -f infra/edge/compose.yml up -d --wait --wait-timeout 60 || rollback
+  docker compose up -d --no-build --remove-orphans --wait --wait-timeout 120 || rollback
 
   log "7/7 Smoke tests"
   ./scripts/smoke-test.sh "$SMOKE_URL" "$NEW" || rollback

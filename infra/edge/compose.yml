@@ -1,0 +1,54 @@
+name: edge
+
+services:
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - socket
+
+  traefik:
+    image: traefik:v3.6
+    restart: unless-stopped
+    depends_on:
+      - socket-proxy
+    command:
+      # Points d'entrée, et redirection HTTP → HTTPS
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      # Source n°1 : Docker, via le gardien et non via le vrai socket
+      - --providers.docker=true
+      - --providers.docker.endpoint=tcp://socket-proxy:2375
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=edge
+      # Source n°2 : les fichiers (certificats, middlewares)
+      - --providers.file.directory=/etc/traefik/dynamic
+      # Divers
+      - --accesslog=true
+      - --ping=true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - ../../proxy/certs:/certs:ro
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - edge
+      - socket
+
+networks:
+  edge:
+    name: edge
+  socket:
+    internal: true

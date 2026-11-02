@@ -58,7 +58,14 @@ services:
         condition: service_healthy
     networks:
       - backend
-      - frontend
+      - edge
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.demo-api.rule=Host(`${APP_HOST:?APP_HOST manquant}`) && (Path(`/graphql`) || Path(`/health`))"
+      - traefik.http.routers.demo-api.entrypoints=websecure
+      - traefik.http.routers.demo-api.tls=true
+      - traefik.http.routers.demo-api.middlewares=security-headers@file,graphql-ratelimit@file
+      - traefik.http.services.demo-api.loadbalancer.server.port=3000
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
       interval: 10s
@@ -71,29 +78,19 @@ services:
     build: ./front
     restart: unless-stopped
     networks:
-      - frontend
+      - edge
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.demo-web.rule=Host(`${APP_HOST:?APP_HOST manquant}`)"
+      - traefik.http.routers.demo-web.entrypoints=websecure
+      - traefik.http.routers.demo-web.tls=true
+      - traefik.http.routers.demo-web.middlewares=security-headers@file
+      - traefik.http.services.demo-web.loadbalancer.server.port=80
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
       interval: 10s
       timeout: 5s
       retries: 3
-
-  proxy:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./proxy/certs:/etc/nginx/certs:ro
-    depends_on:
-      back:
-        condition: service_healthy
-      front:
-        condition: service_healthy
-    networks:
-      - frontend
 
 secrets:
   db_admin_password:
@@ -102,9 +99,10 @@ secrets:
     file: ./secrets/db_app_password
 
 networks:
-  frontend:
   backend:
     internal: true
+  edge:
+    external: true
 
 volumes:
   db-data:
